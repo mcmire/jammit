@@ -69,6 +69,13 @@ module Jammit
   @javascript_compressors = JAVASCRIPT_COMPRESSORS
   @css_compressors        = CSS_COMPRESSORS
 
+  # Return the current environment as a string.
+  def self.environment
+    return ::Rails.env.to_s if defined?(::Rails)
+    return JAMMIT_ENV if defined?(JAMMIT_ENV)
+    return ENV['RAILS_ENV']
+  end
+
   # Load the complete asset configuration from the specified @config_path@.
   # If we're loading softly, don't let missing configuration error out.
   def self.load_configuration(config_path, soft=false)
@@ -78,8 +85,8 @@ module Jammit
     conf = YAML.load(ERB.new(File.read(config_path)).result)
 
     # Optionally overwrite configuration based on the environment.
-    rails_env = (defined?(Rails) ? ::Rails.env : ENV['RAILS_ENV'] || "development")
-    conf.merge! conf.delete rails_env if conf.has_key? rails_env
+    env = environment.to_sym
+    conf.merge! conf.delete(env) if conf.has_key? env
 
     @config_path            = config_path
     @configuration          = symbolize_keys(conf)
@@ -168,8 +175,8 @@ module Jammit
 
   # Turn asset packaging on or off, depending on configuration and environment.
   def self.set_package_assets(value)
-    package_env     = !defined?(Rails) || (!Rails.env.development? && !Rails.env.test?)
-    @package_assets = value == true || value.nil? ? package_env :
+    is_package_env = (environment != 'development' && environment != 'test')
+    @package_assets = value == true || value.nil? ? is_package_env :
                       value == 'always'           ? true : false
   end
 
