@@ -15,7 +15,7 @@ module Jammit
     # versions of the stylesheet package, otherwise the package is regular
     # compressed CSS, and in development the stylesheet URLs are passed verbatim.
     def include_stylesheets(*packages)
-      options = packages.extract_options!
+      options = Hash === packages.last ? packages.pop : {}
       return html_safe(individual_stylesheets(packages, options)) unless should_package?
       disabled = (options.delete(:embed_assets) == false) || (options.delete(:embed_images) == false)
       return html_safe(packaged_stylesheets(packages, options)) if disabled || !Jammit.embed_assets
@@ -25,7 +25,7 @@ module Jammit
     # Writes out the URL to the bundled and compressed javascript package,
     # except in development, where it references the individual scripts.
     def include_javascripts(*packages)
-      options = packages.extract_options!
+      options = Hash === packages.last ? packages.pop : {}
       html_safe packages.map {|pack|
         should_package? ? Jammit.asset_url(pack, :js) : Jammit.packager.individual_urls(pack.to_sym, :js)
       }.flatten.map {|pack|
